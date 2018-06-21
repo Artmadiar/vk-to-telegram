@@ -1,39 +1,24 @@
 require('dotenv').config();
 
-const Telegraf = require('telegraf');
-
-const bot = new Telegraf(process.env.BOT_TOKEN);
-
 const vkPosts = require('./vk-posts');
 const postUrl = require('./vk-post-builder');
+const telegram = require('./telegram');
 const store = require('./store');
 const clients = store.getClients();
 
-// init events
-bot.start((ctx) => {
-  // ctx.from
-  clients.push(ctx.chat.id);
-  store.addClient(ctx.chat.id);
-
-  return ctx.reply('Welcome!');
-});
-bot.help((ctx) => ctx.reply(`I'm a personal property of artmadiar`));
-
-// bot.on('sticker', (ctx) => ctx.reply('👍'))
-// bot.hears('hi', (ctx) => ctx.reply('Hey there'))
-// bot.hears(/buy/i, (ctx) => ctx.reply('Buy-buy'))
-
 const CronJob = require('cron').CronJob;
-new CronJob('* * * * * *',
+new CronJob('10 * * * * *',
   // function for job
   async () => {
+    console.log('Cron job is jobbing :)' , new Date());
+
     if (!clients.length) {
       return;
     }
 
     const posts = await vkPosts();
     let lastPostId = store.getLastPostId();
-    const lastPostDetected = false;
+    let lastPostDetected = false;
 
     // get new posts
     const toSend = posts.reduce((ar, post) => {
@@ -48,18 +33,26 @@ new CronJob('* * * * * *',
       return [...ar, post];
     }, []);
 
-    // update mark (last postId)
-    lastPostId = posts[0].id;
-    store.setLlastPostId(lastPostId);
-
-
     // sending
     toSend.forEach((post) => {
       clients.forEach((client) => {
-        bot.sendMessage(client, postUrl(post))
-        .catch((err) => {
-          console.log(err);
-        });
+        //bot.sendMessage(client, postUrl(post))
+        telegram.sendToChannel(postUrl(post))
+          .then((res) => {
+            if (res.ok) {
+              // update mark (last postId)
+              lastPostId = post.id;
+              store.setLlastPostId(lastPostId);
+              console.log('Message to telegram channel was successfully sent. ', new Date());
+            } else {
+              console.error('Error sending message to telegram channel');
+              process.exit(1);
+            }
+          })
+          .catch((err) => {
+            console.error(err.message);
+            process.exit(1);
+          });
       });
     });
   },
@@ -69,6 +62,3 @@ new CronJob('* * * * * *',
   },
   // run immediately
   true);
-
-bot.startPolling();
-console.log('Telegram bot is working: ', new Date());

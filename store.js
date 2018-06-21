@@ -5,7 +5,6 @@ const adapter = new FileSync('db.json');
 const db = low(adapter);
 
 db.defaults({
-  lastPostId: 0,
   clients: []
 })
 .write();
@@ -27,10 +26,10 @@ module.exports.addClient = (chatId) => {
 }
 
 module.exports.getLastPostId = () => {
-  return db.get('lastPostId').value();
+  return db.get('lastPostId').value() || 0;
 }
 
 module.exports.setLlastPostId = (lastPostId) => {
-  db.update('lastPostId', lastPostId)
+  db.set('lastPostId', lastPostId)
   .write();
 }

@@ -14,6 +14,11 @@ module.exports = () => {
     json: true
   })
   .then((body) => {
+    // error
+    if (body.error) {
+      throw new Error(body.error.error_msg);
+    }
+
     // body
     if (withoutReposts !== 'true') {
       return body.response.items;
