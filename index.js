@@ -4,7 +4,6 @@ const vkPosts = require('./vk-posts');
 const postUrl = require('./vk-post-builder');
 const telegram = require('./telegram');
 const store = require('./store');
-const clients = store.getClients();
 
 const CronJob = require('cron').CronJob;
 new CronJob('10 * * * * *',
@@ -12,12 +11,9 @@ new CronJob('10 * * * * *',
   async () => {
     console.log('Cron job is jobbing :)' , new Date());
 
-    if (!clients.length) {
-      return;
-    }
-
     const posts = await vkPosts();
     let lastPostId = store.getLastPostId();
+    let lastSpluId = store.getLastSpoluId();
     let lastPostDetected = false;
 
     // get new posts
@@ -35,25 +31,23 @@ new CronJob('10 * * * * *',
 
     // sending
     toSend.forEach((post) => {
-      clients.forEach((client) => {
-        //bot.sendMessage(client, postUrl(post))
-        telegram.sendToChannel(postUrl(post))
-          .then((res) => {
-            if (res.ok) {
-              // update mark (last postId)
-              lastPostId = post.id;
-              store.setLlastPostId(lastPostId);
-              console.log('Message to telegram channel was successfully sent. ', new Date());
-            } else {
-              console.error('Error sending message to telegram channel');
-              process.exit(1);
-            }
-          })
-          .catch((err) => {
-            console.error(err.message);
+      telegram.sendToChannel(postUrl(post))
+        .then((res) => {
+          const result = JSON.parse(res);
+          if (result.ok) {
+            // update mark (last postId)
+            lastPostId = post.id;
+            store.setLastPostId(lastPostId);
+            console.log('Message to telegram channel was successfully sent. ', new Date());
+          } else {
+            console.error('Error sending message to telegram channel');
             process.exit(1);
-          });
-      });
+          }
+        })
+        .catch((err) => {
+          console.error(err.message);
+          process.exit(1);
+        });
     });
   },
   // when it ends

@@ -5,7 +5,9 @@ const adapter = new FileSync('db.json');
 const db = low(adapter);
 
 db.defaults({
-  clients: []
+  clients: [],
+  lastPostId: 0,
+  lastSpoluId: 0
 })
 .write();
 
@@ -29,7 +31,16 @@ module.exports.getLastPostId = () => {
   return db.get('lastPostId').value() || 0;
 }
 
-module.exports.setLlastPostId = (lastPostId) => {
+module.exports.setLastPostId = (lastPostId) => {
   db.set('lastPostId', lastPostId)
+  .write();
+}
+
+module.exports.getLastSpoluId = () => {
+  return db.get('lastSpoluId').value() || 0;
+}
+
+module.exports.setLlastSpoluId = (lastSpoluId) => {
+  db.set('lastSpoluId', lastSpoluId)
   .write();
 }

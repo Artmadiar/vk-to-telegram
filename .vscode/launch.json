@@ -7,6 +7,12 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "Web Spolu",
+      "program": "${workspaceFolder}/web-spolu.js"
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "Launch Program",
       "program": "${workspaceFolder}/index.js"
     }
